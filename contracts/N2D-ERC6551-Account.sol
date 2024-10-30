@@ -30,12 +30,12 @@ import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 // import "https://github.com/net2devcrypto/ERC-6551-NFT-Wallets-Web3-Front-End-NextJS/blob/main/imports/ERC6551Bytecode.sol";
 import "../imports/IERC6551.sol";
 import "../imports/ERC6551Bytecode.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-
-contract ERC6551Account is IERC165, IERC1271, IERC6551Account {
+contract ERC6551Account is IERC165, IERC1271, IERC6551Account, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    function executeCall(address to,uint256 value, bytes calldata data) external payable returns (bytes memory result) {
+    function executeCall(address to,uint256 value, bytes calldata data) external payable nonReentrant returns (bytes memory result)  {
         require(msg.sender == owner(), "Not token owner");
         bool success;
         (success, result) = to.call{value: value}(data);
@@ -46,7 +46,7 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account {
         }
     }
 
-    function send(address payable to, uint256 amount) external payable{
+    function SimpleTransferAccount(address payable to, uint256 amount) external payable nonReentrant {
         require(msg.sender == owner(), "Not token owner");
         require(address(this).balance >= amount, "Insufficient funds");
         to.transfer(amount);

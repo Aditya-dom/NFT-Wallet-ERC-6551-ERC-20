@@ -23,7 +23,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.23;
 
 contract Collection is ERC721Enumerable, Ownable {
 

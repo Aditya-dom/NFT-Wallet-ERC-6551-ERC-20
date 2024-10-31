@@ -26,7 +26,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/interfaces/IERC1271.sol"; // signature validation standard
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
-// import "https://github.com/net2devcrypto/ERC-6551-NFT-Wallets-Web3-Front-End-NextJS/blob/main/imports/IERC6551.sol"; 
+// import "https://github.com/net2devcrypto/ERC-6551-NFT-Wallets-Web3-Front-End-NextJS/blob/main/imports/IERC6551.sol";
 // import "https://github.com/net2devcrypto/ERC-6551-NFT-Wallets-Web3-Front-End-NextJS/blob/main/imports/ERC6551Bytecode.sol";
 import "../imports/IERC6551.sol";
 import "../imports/ERC6551Bytecode.sol";
@@ -46,11 +46,20 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account, ReentrancyGuard {
     error ERC6551Account__IncorrectArraySize();
 
 
-    function executeCall(address to,uint256 value, bytes calldata data) external payable nonReentrant returns (bytes memory result)  {
+
+    //////////////////////////////////////////
+    /////////////// Functions ////////////////
+    //////////////////////////////////////////
+    function executeCall(address to, uint256 value, bytes calldata data)
+        external
+        payable
+        nonReentrant
+        returns (bytes memory result)
+    {
         if (to == address(0)) {
             revert ERC6551Account__FailedDueToZeroAddressTransfer();
         }
-        
+
         if (msg.sender != owner()) {
             revert ERC6551Account__NotOwner();
         }
@@ -83,14 +92,14 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account, ReentrancyGuard {
 
         for (uint256 i = 0; i < toArraySize; i++) {
             if (address(this).balance < amounts[i]) {
-            revert ERC6551Account__LowBalanceToTransferFunds();
+                revert ERC6551Account__LowBalanceToTransferFunds();
             }
 
             if (to[i] == address(0)) {
-            revert ERC6551Account__FailedDueToZeroAddressTransfer();
+                revert ERC6551Account__FailedDueToZeroAddressTransfer();
             }
 
-            (bool success, ) = to[i].call{value: amounts[i]}("");
+            (bool success,) = to[i].call{value: amounts[i]}("");
             if (!success) {
                 revert ERC6551Account__ExternalCallFailed();
             }
@@ -101,7 +110,7 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account, ReentrancyGuard {
         if (to == address(0)) {
             revert ERC6551Account__FailedDueToZeroAddressTransfer();
         }
-        
+
         if (msg.sender != owner()) {
             revert ERC6551Account__NotOwner();
         }
@@ -110,19 +119,18 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account, ReentrancyGuard {
             revert ERC6551Account__LowBalanceToTransferFunds();
         }
 
-        (bool success, ) = to.call{value: amount}("");
+        (bool success,) = to.call{value: amount}("");
         if (!success) {
             revert ERC6551Account__ExternalCallFailed();
         }
     }
 
-
-    // added non renetrancy in case dealing with erc 1155 token standard 
+    // added non renetrancy in case dealing with erc 1155 token standard
     function sendCustomErcTransfer(address to, uint256 amount, IERC20 erc20contract) external nonReentrant {
         if (to == address(0)) {
             revert ERC6551Account__FailedDueToZeroAddressTransfer();
         }
-        
+
         if (msg.sender != owner()) {
             revert ERC6551Account__NotOwner();
         }
@@ -136,7 +144,7 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account, ReentrancyGuard {
         erc20contract.transfer(to, amount);
     }
 
-    function nftInfo()external view returns (uint256 chainId, address tokenContract, uint256 tokenId) {
+    function nftInfo() external view returns (uint256 chainId, address tokenContract, uint256 tokenId) {
         uint256 length = address(this).code.length;
         return abi.decode(Bytecode.codeAt(address(this), length - 0x60, length), (uint256, address, uint256));
     }
@@ -148,12 +156,11 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account, ReentrancyGuard {
     }
 
     function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
-        return (interfaceId == type(IERC165).interfaceId ||
-            interfaceId == type(IERC6551Account).interfaceId);
+        return (interfaceId == type(IERC165).interfaceId || interfaceId == type(IERC6551Account).interfaceId);
     }
 
-    function isValidSignature( bytes32 hash, bytes memory signature) external view returns (bytes4 signValues) {
-        bool isValid = SignatureChecker.isValidSignatureNow( owner(), hash, signature);
+    function isValidSignature(bytes32 hash, bytes memory signature) external view returns (bytes4 signValues) {
+        bool isValid = SignatureChecker.isValidSignatureNow(owner(), hash, signature);
         if (isValid) {
             return IERC1271.isValidSignature.selector;
         }

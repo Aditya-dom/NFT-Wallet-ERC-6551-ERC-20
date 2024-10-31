@@ -26,15 +26,13 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 pragma solidity ^0.8.23;
 
 contract USDT is ERC20, ERC20Burnable, Ownable {
+    using SafeERC20 for ERC20;
 
-  using SafeERC20 for ERC20;
+    constructor(address initialOwner) Ownable(initialOwner) ERC20("Tether USD", "USDT") {
+        initialOwner = address(msg.sender);
+    }
 
-  constructor(address initialOwner) Ownable(initialOwner) ERC20("Tether USD", "USDT") {
-    initialOwner = address(msg.sender);
-  }
-  
-  function mint(uint256 amount) external onlyOwner {
-    _mint(msg.sender, amount);
-  }
-
+    function mint(uint256 amount) external onlyOwner {
+        _mint(msg.sender, amount);
+    }
 }

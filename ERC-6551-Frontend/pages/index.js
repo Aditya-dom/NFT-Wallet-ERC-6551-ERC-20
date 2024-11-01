@@ -1,9 +1,15 @@
-
+import { ConnectButton, useConnectModal } from "@rainbow-me/rainbowkit";
+import { useAccount } from "wagmi";
 import Layout from "./layout.js";
 import React, { useEffect, useState } from "react";
-import { getNftsInfo, getErc6551Balances, walletAction } from "../components/config";
+import {
+  getNftsInfo,
+  getErc6551Balances,
+  walletAction,
+} from "../components/config.js";
 
 export default function WalletPage() {
+  const { address, isConnected } = useAccount();
   const [nftinventory, getNftInventory] = useState([]);
   const [loadingState, setLoadingState] = useState(false);
   const [tokenbalances, getTokenBalances] = useState([]);
@@ -13,99 +19,160 @@ export default function WalletPage() {
   const [appbuttontxt, setAppButton] = useState("");
   const [tokenback, setTokenBack] = useState(null);
   const [activetokenbal, setActiveTokenBalance] = useState("");
-  const [initmessage, setInitMessage] = useState("Getting Inventory....");
+  const [initmessage, setInitMessage] = useState("");
   const [nftwallet, setNftWallet] = useState(null);
-  const [modalmsg, setModalMsg] = useState('');
-
-
-  useEffect(() => {
-    getInventory();
-  }, [])
+  const [modalmsg, setModalMsg] = useState("");
 
   useEffect(() => {
-    if (tokenbalances.length != 0) {
-      setActiveTokenBalance(tokenbalances[0].nativebal)
+    if (isConnected && address) {
+      setInitMessage("Getting Inventory....");
+      getInventory();
+    } else {
+      setLoadingState(false);
+      setInitMessage("Please connect your wallet to view NFTs");
+      // Reset states when wallet disconnects
+      getNftInventory([]);
+      getTokenBalances([]);
+      setActiveNftImage("");
+      setActiveNftId("");
+      setActiveToken("");
+      setAppButton("");
+      setTokenBack(null);
+      setActiveTokenBalance("");
+      setNftWallet(null);
+    }
+  }, [isConnected, address]);
+
+  useEffect(() => {
+    if (tokenbalances.length !== 0) {
+      setActiveTokenBalance(tokenbalances[0].nativebal);
       setActiveToken(tokenbalances[0].nativetoken);
       setTokenBack(tokenbalances[0].nativetoken);
     }
-  }, [tokenbalances])
+  }, [tokenbalances]);
 
   const getInventory = async () => {
-    let nfts = await getNftsInfo();
-    getNftInventory(nfts);
-    if (nfts.length > 0) {
-      setActiveNftImage(nfts[0].nftimage);
-      setActiveNftId(nfts[0].nftid);
-      setNftWallet(nfts[0].nftwallet);
-      setAppButton(nfts[0].buttontext);
-      let tokenbalance = await getErc6551Balances(nfts[0].nftwallet);
-      getTokenBalances(tokenbalance);
+    try {
+      let nfts = await getNftsInfo();
+      getNftInventory(nfts);
+      if (nfts.length > 0) {
+        setActiveNftImage(nfts[0].nftimage);
+        setActiveNftId(nfts[0].nftid);
+        setNftWallet(nfts[0].nftwallet);
+        setAppButton(nfts[0].buttontext);
+        let tokenbalance = await getErc6551Balances(nfts[0].nftwallet);
+        getTokenBalances(tokenbalance);
+        setLoadingState(true);
+      } else {
+        setInitMessage("NFT's Not Found in Wallet!");
+        setLoadingState(true);
+      }
+    } catch (error) {
+      console.error("Error fetching inventory:", error);
+      setInitMessage("Error fetching NFTs. Please try again.");
       setLoadingState(true);
     }
-    else {
-      setInitMessage("NFT's Not Found in Wallet!");
-    }
-  }
+  };
 
   const changeNft = async (nftid, nftimage, wallet, buttontext) => {
-    setActiveNftImage(nftimage)
+    setActiveNftImage(nftimage);
     setActiveNftId(nftid);
     setNftWallet(wallet);
     setAppButton(buttontext);
     let tokenbalance = await getErc6551Balances(wallet);
     getTokenBalances(tokenbalance);
     setTokenBack(null);
-  }
+  };
 
   const changeToken = async (tokenname, tokenbalance) => {
     setActiveTokenBalance(tokenbalance);
     setActiveToken(tokenname);
     setTokenBack(tokenname);
-  }
+  };
 
   const openModal = async () => {
     const { Modal } = require("bootstrap");
-    const myModal = new Modal("#msgmodal")
-    myModal.show()
-}
+    const myModal = new Modal("#msgmodal");
+    myModal.show();
+  };
 
   const closeModal = async () => {
     const { Modal } = require("bootstrap");
-    let modal = Modal.getInstance(document.getElementById('msgmodal'));
+    let modal = Modal.getInstance(document.getElementById("msgmodal"));
     modal.hide();
-  }
+  };
 
   const executeAction = async () => {
-    let action = await walletAction(nftwallet, activetoken, appbuttontxt, activenftId);
+    let action = await walletAction(
+      nftwallet,
+      activetoken,
+      appbuttontxt,
+      activenftId
+    );
     if (action == true) {
-      if (appbuttontxt == "Withdraw"){
+      if (appbuttontxt == "Withdraw") {
         setModalMsg("Withdraw in Progress... Standby");
-      }
-      else {
+      } else {
         setModalMsg("Creating NFT Wallet... Standby");
       }
       openModal();
-      await new Promise(r => setTimeout(r, 15000));
-      closeModal()
-      location.reload()
+      await new Promise((r) => setTimeout(r, 15000));
+      closeModal();
+      location.reload();
     }
+  };
+
+  // Show the connect wallet message when not connected
+  if (!isConnected) {
+    return (
+      <Layout>
+        <div className="container">
+          <div className="row justify-content-center">
+            <div className="col-md-6 text-center mt-5">
+              <ConnectButton />
+              <h4 className="mt-4">{initmessage}</h4>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
   }
 
-
-  if (loadingState == false) return (
-    <div className="mt-4">
-      <h4>{initmessage}</h4>
-    </div>
-  )
+  // Show loading state
+  if (!loadingState) {
+    return (
+      <Layout>
+        <div className="container">
+          <div className="row justify-content-center">
+            <div className="col-md-6 text-center mt-5">
+              <h4>{initmessage}</h4>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <>
-      <div id="msgmodal" className="modal fade in" data-bs-keyboard="false" data-bs-backdrop="static" role="dialog">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content modal-badge py-3" style={{background:"#00000080"}}>
-            <h5 className="mx-auto my-auto text-white" >{modalmsg}</h5>
+      <div
+        id="msgmodal"
+        className="modal fade in"
+        data-bs-keyboard="false"
+        data-bs-backdrop="static"
+        role="dialog"
+      >
+        <div className="modal-dialog modal-dialog-centered flex">
+          <div
+            className="modal-content modal-badge py-3"
+            style={{ background: "#00000080" }}
+          >
+            <h5 className="mx-auto my-auto text-white">{modalmsg}</h5>
           </div>
         </div>
+      </div>
+      <div>
+        <ConnectButton />
       </div>
       <Layout>
         <section className="nft-erc6551-details position-relative overflow-hidden ptb-100">
@@ -145,7 +212,14 @@ export default function WalletPage() {
                             <button
                               key={i}
                               type="button"
-                              onClick={() => changeNft(data.nftid, data.nftimage, data.nftwallet, data.buttontext)}
+                              onClick={() =>
+                                changeNft(
+                                  data.nftid,
+                                  data.nftimage,
+                                  data.nftwallet,
+                                  data.buttontext
+                                )
+                              }
                               data-bs-target="#controls"
                               data-bs-slide-to="0"
                               className="active"
@@ -166,13 +240,38 @@ export default function WalletPage() {
                 </div>
                 <div className="col-lg-6">
                   <div className="pd-right">
-                    <div className="pd-title" style={{fontFamily:"SF Pro Display"}}>
-                      <h3 className="h3 text-white">ERC-6551 NFT ERC-20 Wallet</h3>
-                      <h5 className="h6 margin-bottom-10" style={{ fontFamily: 'monospace', color: '#39FF14' }}>{nftwallet}</h5>
+                    <div
+                      className="pd-title"
+                      style={{ fontFamily: "SF Pro Display" }}
+                    >
+                      <h3 className="h3 text-white">
+                        ERC-6551 NFT ERC-20 Wallet
+                      </h3>
+                      <h5
+                        className="h6 margin-bottom-10"
+                        style={{ fontFamily: "monospace", color: "#39FF14" }}
+                      >
+                        {nftwallet}
+                      </h5>
                       <h5 className="h5 text-white">ERC-20 Tokens In NFT</h5>
                     </div>
                     <div className="pd-author-box">
-                      <a type="button" className="single-author d-flex align-items-center" onClick={() => changeToken(tokenbalances[0].nativetoken, tokenbalances[0].nativebal)} style={{ backgroundColor: tokenback === tokenbalances[0].nativetoken ? "#6528e0" : "transparent" }}>
+                      <a
+                        type="button"
+                        className="single-author d-flex align-items-center"
+                        onClick={() =>
+                          changeToken(
+                            tokenbalances[0].nativetoken,
+                            tokenbalances[0].nativebal
+                          )
+                        }
+                        style={{
+                          backgroundColor:
+                            tokenback === tokenbalances[0].nativetoken
+                              ? "#6528e0"
+                              : "transparent",
+                        }}
+                      >
                         <img
                           src="ethereum-eth.svg"
                           alt="nft creator"
@@ -185,8 +284,22 @@ export default function WalletPage() {
                           <h4>{tokenbalances[0].nativebal}</h4>
                         </div>
                       </a>
-                      <a type="button" className="single-author d-flex align-items-center" onClick={() => changeToken(tokenbalances[0].customtoken, tokenbalances[0].custombal)} style={{ backgroundColor: tokenback === tokenbalances[0].customtoken ? "#6528e0" : "transparent" }}>
-
+                      <a
+                        type="button"
+                        className="single-author d-flex align-items-center"
+                        onClick={() =>
+                          changeToken(
+                            tokenbalances[0].customtoken,
+                            tokenbalances[0].custombal
+                          )
+                        }
+                        style={{
+                          backgroundColor:
+                            tokenback === tokenbalances[0].customtoken
+                              ? "#6528e0"
+                              : "transparent",
+                        }}
+                      >
                         <img
                           src="usdt.svg"
                           alt="nft creator"
@@ -202,11 +315,15 @@ export default function WalletPage() {
                     </div>
                     <div className="bid-amount margin-top-30">
                       <span className="text-white">Balance</span>
-                      <h3 className="text-white">{activetokenbal + " " + activetoken} </h3>
+                      <h3 className="text-white">
+                        {activetokenbal + " " + activetoken}{" "}
+                      </h3>
                     </div>
                     <div className="pd-btns margin-top-20">
                       <div className="primary-btn margin-right-10">
-                        <a type="button" onClick={executeAction}><h5 className="my-auto">{appbuttontxt}</h5></a>
+                        <a type="button" onClick={executeAction}>
+                          <h5 className="my-auto">{appbuttontxt}</h5>
+                        </a>
                       </div>
                     </div>
                     <div className="pd-tab">
@@ -223,13 +340,15 @@ export default function WalletPage() {
                       </ul>
                       <div className="tab-content">
                         <div className="tab-pane active fade show" id="details">
-                          <h3>
-                            ID: {activenftId}
-                          </h3>
+                          <h3>ID: {activenftId}</h3>
                           <h5>
                             NFT Collection with TokenBound ERC-6551 Tutorial
                           </h5>
-                          <img src="https://raw.githubusercontent.com/net2devcrypto/misc/main/net2dev-sociallogo.png" width="150" style={{opacity:'0.6'}} />
+                          <img
+                            src="https://raw.githubusercontent.com/net2devcrypto/misc/main/net2dev-sociallogo.png"
+                            width="150"
+                            style={{ opacity: "0.6" }}
+                          />
                         </div>
                       </div>
                     </div>

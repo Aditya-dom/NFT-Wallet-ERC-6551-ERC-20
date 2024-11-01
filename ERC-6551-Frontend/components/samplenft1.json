@@ -1,0 +1,17 @@
+{
+    "name": "Cool NFT #1",
+    "description": "This is a cool NFT!",
+    "image": "https://ipfs.io/ipfs/QmbvGQDceUMSJzuFaJyechbhCjcYS49xbEzNjLnAZ483Yk",
+    "attributes": [
+        {
+            "trait_type": "Background",
+            "value": "Blue"
+        },
+        {
+            "trait_type": "Eyes",
+            "value": "Green"
+        }
+    ]
+}
+
+

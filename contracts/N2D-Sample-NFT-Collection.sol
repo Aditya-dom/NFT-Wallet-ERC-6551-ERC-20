@@ -23,18 +23,19 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.19;
 
 contract Collection is ERC721Enumerable, Ownable {
     using Strings for uint256;
-
     string public baseURI;
     string public baseExtension = ".json";
     uint256 public maxSupply = 1000;
     uint256 public maxMintAmount = 4;
     bool public paused = false;
 
-    constructor(address initialOwner) Ownable(initialOwner) ERC721("Net2Dev NFT Collection", "N2D") {
+    constructor(
+        address initialOwner
+    ) Ownable(initialOwner) ERC721("Net2Dev NFT Collection", "N2D") {
         initialOwner = address(msg.sender);
     }
 
@@ -54,7 +55,9 @@ contract Collection is ERC721Enumerable, Ownable {
         }
     }
 
-    function walletOfOwner(address _owner) public view returns (uint256[] memory) {
+    function walletOfOwner(
+        address _owner
+    ) public view returns (uint256[] memory) {
         uint256 ownerTokenCount = balanceOf(_owner);
         uint256[] memory tokenIds = new uint256[](ownerTokenCount);
         for (uint256 i; i < ownerTokenCount; i++) {
@@ -63,14 +66,27 @@ contract Collection is ERC721Enumerable, Ownable {
         return tokenIds;
     }
 
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        require(_ownerOf(tokenId) != address(0), "ERC721Metadata: URI query for nonexistent token");
+    function tokenURI(
+        uint256 tokenId
+    ) public view virtual override returns (string memory) {
+        require(
+            _ownerOf(tokenId) != address(0),
+            "ERC721Metadata: URI query for nonexistent token"
+        );
 
         string memory currentBaseURI = _baseURI();
-        return bytes(currentBaseURI).length > 0
-            ? string(abi.encodePacked(currentBaseURI, tokenId.toString(), baseExtension))
-            : "";
+        return
+            bytes(currentBaseURI).length > 0
+                ? string(
+                    abi.encodePacked(
+                        currentBaseURI,
+                        tokenId.toString(),
+                        baseExtension
+                    )
+                )
+                : "";
     }
+
     // only owner
 
     function setmaxMintAmount(uint256 _newmaxMintAmount) public onlyOwner {
@@ -81,7 +97,9 @@ contract Collection is ERC721Enumerable, Ownable {
         baseURI = _newBaseURI;
     }
 
-    function setBaseExtension(string memory _newBaseExtension) public onlyOwner {
+    function setBaseExtension(
+        string memory _newBaseExtension
+    ) public onlyOwner {
         baseExtension = _newBaseExtension;
     }
 

@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.27;
 
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
 contract Lock {
-    uint256 public unlockTime;
+    uint public unlockTime;
     address payable public owner;
 
-    event Withdrawal(uint256 amount, uint256 when);
+    event Withdrawal(uint amount, uint when);
 
-    constructor(uint256 _unlockTime) payable {
-        require(block.timestamp < _unlockTime, "Unlock time should be in the future");
+    constructor(uint _unlockTime) payable {
+        require(
+            block.timestamp < _unlockTime,
+            "Unlock time should be in the future"
+        );
 
         unlockTime = _unlockTime;
         owner = payable(msg.sender);
@@ -28,4 +31,3 @@ contract Lock {
 
         owner.transfer(address(this).balance);
     }
-}

@@ -3,27 +3,42 @@ pragma solidity ^0.8.19;
 
 import "./TokenboundAccount.sol"; // Reference to TBA
 
+interface ITokenboundAccount {
+    function transferController(address newController) external;
+    function execute(address target, uint256 value, bytes calldata data) external returns (bytes memory);
+}
+
 contract AdvancedGuardianRecovery {
     address public owner;
-    address[] public guardians;
-    mapping(address => bool) public isGuardian;
-    mapping(address => bool) public hasApproved;
-    uint256 public guardianThreshold;
-    uint256 public recoveryTimeLock;
-    uint256 public recoveryInitiatedTime;
-    address public recoveryCandidate;
+    address public tokenBoundAccount;
     bool public recoveryInProgress;
-    bool public recoveryPaused;
+    uint256 public recoveryStartTime;
+    uint256 public recoveryThreshold;
+    uint256 public timeLockDuration;
+    bool public emergencyStop;
 
-    TokenboundAccount public tokenboundAccount;
+    mapping(address => bool) public guardians;
+    mapping(address => bool) public approvals;
+    uint256 public approvalCount;
 
     event GuardianAdded(address indexed guardian);
     event GuardianRemoved(address indexed guardian);
-    event RecoveryInitiated(address indexed candidate, uint256 timestamp);
+    event RecoveryInitiated(uint256 startTime);
     event RecoveryApproved(address indexed guardian);
+    event RecoveryCanceled(address indexed guardian);
+    event EmergencyStopActivated(address indexed initiator);
     event RecoveryCompleted(address indexed newOwner);
-    event RecoveryCancelled();
-    event EmergencyStopActivated();
+
+    constructor(
+        address _tokenBoundAccount,
+        uint256 _timeLockDuration,
+        uint256 _recoveryThreshold
+    ) {
+        owner = msg.sender;
+        tokenBoundAccount = _tokenBoundAccount;
+        timeLockDuration = _timeLockDuration;
+        recoveryThreshold = _recoveryThreshold;
+    }
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Caller is not the owner");
@@ -31,129 +46,81 @@ contract AdvancedGuardianRecovery {
     }
 
     modifier onlyGuardian() {
-        require(isGuardian[msg.sender], "Caller is not a guardian");
+        require(guardians[msg.sender], "Caller is not a guardian");
         _;
     }
 
-    modifier recoveryLock() {
-        require(!recoveryPaused, "Recovery is paused");
-        require(
-            !recoveryInProgress || 
-            (block.timestamp >= recoveryInitiatedTime + recoveryTimeLock), 
-            "Recovery time lock active"
-        );
+    modifier noEmergencyStop() {
+        require(!emergencyStop, "Emergency stop activated");
         _;
     }
 
-    constructor(
-        address _tokenboundAccount,
-        address[] memory _guardians,
-        uint256 _guardianThreshold,
-        uint256 _recoveryTimeLock
-    ) {
-        require(_guardians.length >= _guardianThreshold, "Threshold exceeds guardian count");
-        owner = msg.sender;
-        guardians = _guardians;
-        guardianThreshold = _guardianThreshold;
-        recoveryTimeLock = _recoveryTimeLock;
-        tokenboundAccount = TokenboundAccount(_tokenboundAccount);
-
-        for (uint256 i = 0; i < _guardians.length; i++) {
-            isGuardian[_guardians[i]] = true;
-            emit GuardianAdded(_guardians[i]);
-        }
+    function addGuardian(address guardian) external onlyOwner {
+        guardians[guardian] = true;
+        emit GuardianAdded(guardian);
     }
 
-    function addGuardian(address _guardian) external onlyOwner {
-        require(!isGuardian[_guardian], "Already a guardian");
-        guardians.push(_guardian);
-        isGuardian[_guardian] = true;
-        emit GuardianAdded(_guardian);
+    function removeGuardian(address guardian) external onlyOwner {
+        guardians[guardian] = false;
+        emit GuardianRemoved(guardian);
     }
 
-    function removeGuardian(address _guardian) external onlyOwner {
-        require(isGuardian[_guardian], "Not a guardian");
-        isGuardian[_guardian] = false;
-
-        // Remove guardian from approval tracking to avoid stale data
-        if (hasApproved[_guardian]) {
-            hasApproved[_guardian] = false;
-        }
-
-        emit GuardianRemoved(_guardian);
-    }
-
-    function updateThreshold(uint256 _newThreshold) external onlyOwner {
-        require(_newThreshold <= guardians.length, "Threshold exceeds guardian count");
-        guardianThreshold = _newThreshold;
-    }
-
-    function initiateRecovery(address newOwner) external onlyGuardian recoveryLock {
-        require(newOwner != address(0), "Invalid recovery candidate");
-        require(recoveryCandidate == newOwner || recoveryCandidate == address(0), "Recovery already in progress");
-
-        recoveryInProgress = true;
-        recoveryCandidate = newOwner;
-        recoveryInitiatedTime = block.timestamp;
-
-        emit RecoveryInitiated(newOwner, block.timestamp);
-    }
-
-    function approveRecovery() external onlyGuardian recoveryLock {
+    function approveRecovery() external onlyGuardian noEmergencyStop {
         require(recoveryInProgress, "No recovery in progress");
-        require(!hasApproved[msg.sender], "Guardian has already approved");
+        require(!approvals[msg.sender], "Guardian already approved");
 
-        hasApproved[msg.sender] = true;
+        approvals[msg.sender] = true;
+        approvalCount += 1;
         emit RecoveryApproved(msg.sender);
 
-        if (getApprovalCount() >= guardianThreshold) {
+        if (approvalCount >= recoveryThreshold) {
             completeRecovery();
         }
     }
 
-    function completeRecovery() internal {
-        require(recoveryInProgress, "No recovery in progress");
-        require(getApprovalCount() >= guardianThreshold, "Not enough approvals");
-
-        tokenboundAccount.transferOwnership(recoveryCandidate);
-        emit RecoveryCompleted(recoveryCandidate);
-
-        // Reset recovery state
-        resetRecovery();
+    function initiateRecovery() external onlyGuardian noEmergencyStop {
+        require(!recoveryInProgress, "Recovery already in progress");
+        recoveryInProgress = true;
+        recoveryStartTime = block.timestamp;
+        emit RecoveryInitiated(recoveryStartTime);
     }
 
-    function cancelRecovery() external onlyOwner {
+    function vetoRecovery() external onlyOwner noEmergencyStop {
         require(recoveryInProgress, "No recovery in progress");
-        resetRecovery();
-        emit RecoveryCancelled();
+        recoveryInProgress = false;
+        resetApprovals();
+        emit RecoveryCanceled(msg.sender);
     }
 
     function activateEmergencyStop() external onlyOwner {
-        recoveryPaused = true;
-        emit EmergencyStopActivated();
+        emergencyStop = true;
+        emit EmergencyStopActivated(msg.sender);
     }
 
-    function deactivateEmergencyStop() external onlyOwner {
-        recoveryPaused = false;
-    }
+    function completeRecovery() internal {
+        require(
+            recoveryInProgress && (block.timestamp >= recoveryStartTime + timeLockDuration),
+            "Recovery time lock not passed"
+        );
 
-    function resetRecovery() internal {
         recoveryInProgress = false;
-        recoveryCandidate = address(0);
-        recoveryInitiatedTime = 0;
-
-        for (uint256 i = 0; i < guardians.length; i++) {
-            hasApproved[guardians[i]] = false;
-        }
+        resetApprovals();
+        ITokenboundAccount(tokenBoundAccount).transferController(owner);
+        emit RecoveryCompleted(owner);
     }
 
-    function getApprovalCount() public view returns (uint256) {
-        uint256 count = 0;
-        for (uint256 i = 0; i < guardians.length; i++) {
-            if (hasApproved[guardians[i]]) {
-                count++;
-            }
+    function resetApprovals() internal {
+        for (uint256 i = 0; i < approvalCount; i++) {
+            approvals[address(i)] = false;
         }
-        return count;
+        approvalCount = 0;
+    }
+
+    function executeAsOwner(
+        address target,
+        uint256 value,
+        bytes calldata data
+    ) external onlyOwner noEmergencyStop returns (bytes memory) {
+        return ITokenboundAccount(tokenBoundAccount).execute(target, value, data);
     }
 }

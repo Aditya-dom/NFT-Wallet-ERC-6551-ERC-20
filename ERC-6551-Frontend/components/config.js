@@ -10,6 +10,8 @@ const nftContractAddr = "0xa2269f4e04112043653b86741056f665310ba06a";
 const erc6551RegistryAddr = "0xb0c4c48946718c9548e7275f0191d32e6cb3d0f6";
 const erc6551BaseAccount = "0xe6b9d16cb2628c200e2cfc8ae19a6b3e25865c69";
 const usdtContractAddr = "0xe4afc1092e98b9c838fbbe72cfb9fb8d97b3431e";
+const AdvancedGuardianRecovery = "";
+const TokenboundAccount = "";
 
 // Gas settings
 const GAS_SETTINGS = {

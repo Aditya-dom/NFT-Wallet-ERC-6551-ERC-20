@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.27;
 
 import "./TokenboundAccount.sol"; // Reference to TBA
 
@@ -9,6 +9,14 @@ interface ITokenboundAccount {
 }
 
 contract AdvancedGuardianRecovery {
+    event GuardianAdded(address indexed guardian);
+    event GuardianRemoved(address indexed guardian);
+    event RecoveryInitiated(uint256 startTime);
+    event RecoveryApproved(address indexed guardian);
+    event RecoveryCanceled(address indexed guardian);
+    event EmergencyStopActivated(address indexed initiator);
+    event RecoveryCompleted(address indexed newOwner);
+    
     address public owner;
     address public tokenBoundAccount;
     bool public recoveryInProgress;
@@ -21,13 +29,6 @@ contract AdvancedGuardianRecovery {
     mapping(address => bool) public approvals;
     uint256 public approvalCount;
 
-    event GuardianAdded(address indexed guardian);
-    event GuardianRemoved(address indexed guardian);
-    event RecoveryInitiated(uint256 startTime);
-    event RecoveryApproved(address indexed guardian);
-    event RecoveryCanceled(address indexed guardian);
-    event EmergencyStopActivated(address indexed initiator);
-    event RecoveryCompleted(address indexed newOwner);
 
     constructor(
         address _tokenBoundAccount,
@@ -111,7 +112,7 @@ contract AdvancedGuardianRecovery {
 
     function resetApprovals() internal {
         for (uint256 i = 0; i < approvalCount; i++) {
-            approvals[address(i)] = false;
+            // approvals[address(i)] = false;
         }
         approvalCount = 0;
     }

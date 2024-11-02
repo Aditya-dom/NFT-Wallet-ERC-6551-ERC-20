@@ -1,31 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
-
-/*
-Follow/Subscribe Youtube, Github, IM, Tiktok
-for more amazing content!!
-@Net2Dev
-███╗░░██╗███████╗████████╗██████╗░██████╗░███████╗██╗░░░██╗
-████╗░██║██╔════╝╚══██╔══╝╚════██╗██╔══██╗██╔════╝██║░░░██║
-██╔██╗██║█████╗░░░░░██║░░░░░███╔═╝██║░░██║█████╗░░╚██╗░██╔╝
-██║╚████║██╔══╝░░░░░██║░░░██╔══╝░░██║░░██║██╔══╝░░░╚████╔╝░
-██║░╚███║███████╗░░░██║░░░███████╗██████╔╝███████╗░░╚██╔╝░░
-╚═╝░░╚══╝╚══════╝░░░╚═╝░░░╚══════╝╚═════╝░╚══════╝░░░╚═╝░░░
-THIS CONTRACT IS AVAILABLE FOR EDUCATIONAL 
-PURPOSES ONLY. YOU ARE SOLELY REPONSIBLE 
-FOR ITS USE. I AM NOT RESPONSIBLE FOR ANY
-OTHER USE. THIS IS TRAINING/EDUCATIONAL
-MATERIAL. ONLY USE IT IF YOU AGREE TO THE
-TERMS SPECIFIED ABOVE.
-*/
+pragma solidity ^0.8.27;
 
 import "@openzeppelin/contracts/utils/Create2.sol";
-// import "https://github.com/net2devcrypto/ERC-6551-NFT-Wallets-Web3-Front-End-NextJS/blob/main/imports/IERC6551.sol";
-// import "https://github.com/net2devcrypto/ERC-6551-NFT-Wallets-Web3-Front-End-NextJS/blob/main/imports/ERC6551Bytecode.sol";
-import "../imports/IERC6551.sol";
-import "../imports/ERC6551Bytecode.sol";
 
-contract ERC6551Registry is IERC6551Registry {
+contract ERC6551Registry {
+    event AccountCreated(address indexed accountAddress);
+
+
     error InitializationFailed();
 
     function createAccount(
@@ -35,7 +16,7 @@ contract ERC6551Registry is IERC6551Registry {
         uint256 tokenId,
         uint256 salt,
         bytes calldata initData
-    ) external returns (address) {
+    ) external returns (address accountAddress) {
         require(implementation != address(0), "Invalid implementation");
         require(tokenContract != address(0), "Invalid token contract");
 
@@ -47,32 +28,25 @@ contract ERC6551Registry is IERC6551Registry {
             salt
         );
 
-        address account = Create2.computeAddress(
+        accountAddress = Create2.computeAddress(
             bytes32(salt),
             keccak256(code)
         );
 
-        if (account.code.length > 0) {
-            return account;
+        if (accountAddress.code.length > 0) {
+            return accountAddress;
         }
 
-        account = Create2.deploy(0, bytes32(salt), code);
+        accountAddress = Create2.deploy(0, bytes32(salt), code);
 
         if (initData.length > 0) {
-            (bool success, ) = account.call(initData);
+            (bool success, ) = accountAddress.call(initData);
             if (!success) revert InitializationFailed();
         }
 
         emit AccountCreated(
-            account,
-            implementation,
-            chainId,
-            tokenContract,
-            tokenId,
-            salt
+            accountAddress
         );
-
-        return account;
     }
 
     function account(

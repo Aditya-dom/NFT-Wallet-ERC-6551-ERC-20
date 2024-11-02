@@ -1,29 +1,11 @@
 // SPDX-License-Identifier: MIT LICENSE
 
-/*
-Follow/Subscribe Youtube, Github, IM, Tiktok
-for more amazing content!!
-@Net2Dev
-███╗░░██╗███████╗████████╗██████╗░██████╗░███████╗██╗░░░██╗
-████╗░██║██╔════╝╚══██╔══╝╚════██╗██╔══██╗██╔════╝██║░░░██║
-██╔██╗██║█████╗░░░░░██║░░░░░███╔═╝██║░░██║█████╗░░╚██╗░██╔╝
-██║╚████║██╔══╝░░░░░██║░░░██╔══╝░░██║░░██║██╔══╝░░░╚████╔╝░
-██║░╚███║███████╗░░░██║░░░███████╗██████╔╝███████╗░░╚██╔╝░░
-╚═╝░░╚══╝╚══════╝░░░╚═╝░░░╚══════╝╚═════╝░╚══════╝░░░╚═╝░░░
-THIS CONTRACT IS AVAILABLE FOR EDUCATIONAL 
-PURPOSES ONLY. YOU ARE SOLELY REPONSIBLE 
-FOR ITS USE. I AM NOT RESPONSIBLE FOR ANY
-OTHER USE. THIS IS TRAINING/EDUCATIONAL
-MATERIAL. ONLY USE IT IF YOU AGREE TO THE
-TERMS SPECIFIED ABOVE.
-*/
+pragma solidity ^0.8.27;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-
-pragma solidity ^0.8.19;
 
 contract Collection is ERC721Enumerable, Ownable {
     using Strings for uint256;

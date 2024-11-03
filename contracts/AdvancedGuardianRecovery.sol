@@ -112,7 +112,7 @@ contract AdvancedGuardianRecovery {
 
     function resetApprovals() internal {
         for (uint256 i = 0; i < approvalCount; i++) {
-            // approvals[address(i)] = false;
+            approvals[addressList[i]] = false; //Assuming addressList is an array of addresses
         }
         approvalCount = 0;
     }

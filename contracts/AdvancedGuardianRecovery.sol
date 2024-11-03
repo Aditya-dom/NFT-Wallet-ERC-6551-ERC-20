@@ -16,7 +16,7 @@ contract AdvancedGuardianRecovery {
     event RecoveryCanceled(address indexed guardian);
     event EmergencyStopActivated(address indexed initiator);
     event RecoveryCompleted(address indexed newOwner);
-    
+
     address public owner;
     address public tokenBoundAccount;
     bool public recoveryInProgress;
@@ -27,8 +27,8 @@ contract AdvancedGuardianRecovery {
 
     mapping(address => bool) public guardians;
     mapping(address => bool) public approvals;
+    address[] public addressList; // List of addresses that have approved recovery
     uint256 public approvalCount;
-
 
     constructor(
         address _tokenBoundAccount,
@@ -71,6 +71,7 @@ contract AdvancedGuardianRecovery {
         require(!approvals[msg.sender], "Guardian already approved");
 
         approvals[msg.sender] = true;
+        addressList.push(msg.sender); // Add guardian to the address list
         approvalCount += 1;
         emit RecoveryApproved(msg.sender);
 
@@ -111,9 +112,10 @@ contract AdvancedGuardianRecovery {
     }
 
     function resetApprovals() internal {
-        for (uint256 i = 0; i < approvalCount; i++) {
-            approvals[addressList[i]] = false; //Assuming addressList is an array of addresses
+        for (uint256 i = 0; i < addressList.length; i++) {
+            approvals[addressList[i]] = false;
         }
+        delete addressList; // Clear the address list after resetting
         approvalCount = 0;
     }
 

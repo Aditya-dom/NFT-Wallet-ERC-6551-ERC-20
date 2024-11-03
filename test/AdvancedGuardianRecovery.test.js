@@ -13,7 +13,7 @@ describe("AdvancedGuardianRecovery", function () {
 
         // Deploy TokenboundAccount contract
         TokenboundAccount = await ethers.getContractFactory("TokenboundAccount");
-        tokenboundAccount = await TokenboundAccount.deploy();
+        tokenboundAccount = await TokenboundAccount.deploy(owner.address);
         await tokenboundAccount.deployed();
 
         // Set up guardians and threshold

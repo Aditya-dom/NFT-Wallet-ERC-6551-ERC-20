@@ -96,10 +96,10 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account, IERC721Receiver, 
     }
 
     function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes calldata
+       address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
     ) external pure override returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
     }

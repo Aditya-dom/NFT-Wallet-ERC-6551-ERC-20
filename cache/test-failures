@@ -1,1 +1,1 @@
-test_shouldMintWhenOwnerCallsMint
+test__MintShouldPauseWhenProtocolisPAused

@@ -10,12 +10,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     
   const accounts = await ethers.getSigners();
   const User = accounts[1];
-  const userArgs = [User.address];
 
   const USDT = await deploy("USDT", {
     from: deployer,
     // in this contract, we can choose our initial price since it is a mock
-    args: [User.address], // --> constructor args
+    args: [], // --> constructor args
     log: true,
     waitConfirmations: network.config.blockConfirmations || 1,
   });
@@ -36,7 +35,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const NFTCollection = await deploy("Collection", {
     from: deployer,
     // in this contract, we can choose our initial price since it is a mock
-    args: [User.address], // --> constructor args
+    args: [], // --> constructor args
     log: true,
     waitConfirmations: network.config.blockConfirmations || 1,
   });
@@ -54,4 +53,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   log("---------------------------------------------------");  
 };
 
-module.exports.tags = ["all", "USDT_COlllection"];
+module.exports.tags = ["all", "USDT_COllection"];

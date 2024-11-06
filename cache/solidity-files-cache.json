@@ -48,8 +48,8 @@
       ]
     },
     "/Users/pranavlakkadi/Codes/Quranium_Internship/ERC6551/NFT-Wallet-ERC-6551-ERC-20/contracts/TokenboundAccount.sol": {
-      "lastModificationDate": 1730580356081,
-      "contentHash": "357aa270b7e9cdeb7337e8427ade75f0",
+      "lastModificationDate": 1730747896575,
+      "contentHash": "da0a733123a3269d4b9558ebab43a14d",
       "sourceName": "contracts/TokenboundAccount.sol",
       "solcConfig": {
         "version": "0.8.27",
@@ -811,8 +811,8 @@
       ]
     },
     "/Users/pranavlakkadi/Codes/Quranium_Internship/ERC6551/NFT-Wallet-ERC-6551-ERC-20/contracts/N2D-ERC6551-Registry.sol": {
-      "lastModificationDate": 1730580320835,
-      "contentHash": "c4f2abcc66753f1b9addf44958fd6d9e",
+      "lastModificationDate": 1730661044827,
+      "contentHash": "5fb40b1a3641284a35d8ca7dba756a01",
       "sourceName": "contracts/N2D-ERC6551-Registry.sol",
       "solcConfig": {
         "version": "0.8.27",
@@ -1489,8 +1489,8 @@
       ]
     },
     "/Users/pranavlakkadi/Codes/Quranium_Internship/ERC6551/NFT-Wallet-ERC-6551-ERC-20/contracts/N2D-Sample-NFT-Collection.sol": {
-      "lastModificationDate": 1730580516564,
-      "contentHash": "01d09cfb74a6a2fb7d917074a3378566",
+      "lastModificationDate": 1730881757090,
+      "contentHash": "78c4fbc007ef186760606a56e3b46112",
       "sourceName": "contracts/N2D-Sample-NFT-Collection.sol",
       "solcConfig": {
         "version": "0.8.27",
@@ -1524,10 +1524,10 @@
         }
       },
       "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol",
         "@openzeppelin/contracts/token/ERC20/IERC20.sol",
         "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol",
-        "@openzeppelin/contracts/utils/Strings.sol"
+        "@openzeppelin/contracts/utils/Strings.sol",
+        "@openzeppelin/contracts/token/ERC721/ERC721.sol"
       ],
       "versionPragmas": [
         "^0.8.27"
@@ -1721,8 +1721,8 @@
       ]
     },
     "/Users/pranavlakkadi/Codes/Quranium_Internship/ERC6551/NFT-Wallet-ERC-6551-ERC-20/contracts/N2D-Sample-Fake-USDT.sol": {
-      "lastModificationDate": 1730660461527,
-      "contentHash": "0e1f70e79ef3912e121e86974bdb4527",
+      "lastModificationDate": 1730741928688,
+      "contentHash": "ad0e5f4589ea406769de1a134763a09f",
       "sourceName": "contracts/N2D-Sample-Fake-USDT.sol",
       "solcConfig": {
         "version": "0.8.27",

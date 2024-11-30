@@ -6,7 +6,7 @@ pragma solidity >=0.7.0 <0.9.0;
  * @title QMath
  * @notice Math operations with safety checks that revert on error (overflow/underflow)
  */
-library SafeMath {
+library QMath {
     /**
      * @notice Multiplies two numbers, reverts on overflow.
      * @param a First number

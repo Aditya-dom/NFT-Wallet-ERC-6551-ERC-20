@@ -47,3 +47,35 @@ Read the "readme-first" located inside the "ERC-6551-Frontend" folder then run t
 cd ERC-6551-Frontend
 npm run dev
 ```
+
+
+
+# How to run test and deployments scripts (backend).
+<h1> Deployment Script </h1>
+
+All the deployment scripts are in the deploy folder of the repo. You can deploy the contracts using the scripts in the deploy folder. The scripts are written in hardhat and can be run using the following command.
+
+To run on local hardhat network 
+```shell
+yarn hardhat deploy 
+```
+
+to run on testnet (make sure u have added ur private key to .env file and the config parameters are set in hardhat.config.js)
+```shell
+yarn hardhat deploy --network sepolia
+```
+
+
+
+<h1> Testing Script </h1>
+
+The tests are written Foundry and Hardhat and can be run using the following command.
+
+```shell
+yarn hardhat test
+
+or 
+
+forge test 
+```
+

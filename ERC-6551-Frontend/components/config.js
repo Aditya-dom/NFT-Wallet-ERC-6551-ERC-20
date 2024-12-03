@@ -4,6 +4,11 @@ import nftabi from "./nftabi.json";
 import erc20abi from "./erc20abi.json";
 import erc6551regAbi from "./erc6551registry.json";
 import erc6551accAbi from "./erc6551account.json";
+import PriceOracleAbi from "./PriceOracle.json";
+import ITradingToolsAbi from "./ITradingTools.json";
+import TradingToolsAbi from "./TradingTools.json";
+import TradingToolsStorageAbi from "./TradingToolsStorage.json";
+
 import { ethers } from "ethers";
 
 const nftContractAddr = "0xa2269f4e04112043653b86741056f665310ba06a";
@@ -12,6 +17,9 @@ const erc6551BaseAccount = "0xe6b9d16cb2628c200e2cfc8ae19a6b3e25865c69";
 const usdtContractAddr = "0xe4afc1092e98b9c838fbbe72cfb9fb8d97b3431e";
 const AdvancedGuardianRecovery = "";
 const TokenboundAccount = "";
+const TradingTools = "";
+const PriceOracle = "";
+const TradingToolsStorage = "";
 
 // Gas settings
 const GAS_SETTINGS = {

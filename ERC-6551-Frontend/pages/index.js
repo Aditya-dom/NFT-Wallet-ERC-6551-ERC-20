@@ -29,6 +29,7 @@ export default function WalletPage() {
   const [stopLossPrice, setStopLossPrice] = useState("");
   const [activeTradeButton, setActiveTradeButton] = useState("");
 
+
   useEffect(() => {
     if (isConnected && address) {
       setInitMessage("Getting Inventory....");
@@ -304,13 +305,13 @@ export default function WalletPage() {
                         className="single-author d-flex align-items-center"
                         onClick={() =>
                           changeToken(
-                            tokenbalances[0].nativetoken,
-                            tokenbalances[0].nativebal
+                            tokenbalances?.[0]?.nativetoken,
+                            tokenbalances?.[0]?.nativebal
                           )
                         }
                         style={{
                           backgroundColor:
-                            tokenback === tokenbalances[0].nativetoken
+                            tokenback === tokenbalances?.[0]?.nativetoken
                               ? "#6528e0"
                               : "transparent",
                         }}
@@ -323,8 +324,8 @@ export default function WalletPage() {
                         />
 
                         <div className="author-info">
-                          <span>{tokenbalances[0].nativetoken}</span>
-                          <h4>{tokenbalances[0].nativebal}</h4>
+                          <span>{tokenbalances?.[0]?.nativetoken}</span>
+                          <h4>{tokenbalances?.[0]?.nativebal}</h4>
                         </div>
                       </a>
                       <a
@@ -332,13 +333,13 @@ export default function WalletPage() {
                         className="single-author d-flex align-items-center"
                         onClick={() =>
                           changeToken(
-                            tokenbalances[0].customtoken,
-                            tokenbalances[0].custombal
+                            tokenbalances?.[0]?.customtoken,
+                            tokenbalances?.[0]?.custombal
                           )
                         }
                         style={{
                           backgroundColor:
-                            tokenback === tokenbalances[0].customtoken
+                            tokenback === tokenbalances?.[0]?.customtoken
                               ? "#6528e0"
                               : "transparent",
                         }}
@@ -351,8 +352,8 @@ export default function WalletPage() {
                         />
 
                         <div className="author-info">
-                          <span>{tokenbalances[0].customtoken}</span>
-                          <h4>{tokenbalances[0].custombal}</h4>
+                          <span>{tokenbalances?.[0]?.customtoken}</span>
+                          <h4>{tokenbalances?.[0]?.custombal}</h4>
                         </div>
                       </a>
                     </div>

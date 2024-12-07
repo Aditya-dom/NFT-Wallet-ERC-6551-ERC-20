@@ -23,7 +23,7 @@ const poolDataProviderContract = new UiPoolDataProvider({
 
 const incentiveDataProviderContract = new UiIncentiveDataProvider({
   uiIncentiveDataProviderAddress:
-    markets.AaveV3Ethereum.UI_INCENTIVE_DATA_PROVIDER,
+  markets.AaveV3Ethereum.UI_INCENTIVE_DATA_PROVIDER,
   provider,
   chainId: ChainId.sepolia,  // Change chainId if using another network
 });

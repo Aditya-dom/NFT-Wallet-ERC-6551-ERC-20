@@ -2,10 +2,15 @@
 pragma solidity ^0.8.27;
 
 contract TokenboundAccount {
+
+    error TokenboundAccount__InvalidController();
+    error TokenboundAccount__ExecuteCallFailed();
+
+
     address public controller;
 
     modifier onlyController() {
-        require(msg.sender == controller, "Caller is not the controller");
+        if (msg.sender != controller) revert TokenboundAccount__InvalidController();
         _;
     }
 
@@ -27,7 +32,7 @@ contract TokenboundAccount {
         bytes calldata data
     ) external onlyController returns (bytes memory) {
         (bool success, bytes memory result) = target.call{value: value}(data);
-        require(success, "Call failed");
+        if (!success) revert TokenboundAccount__ExecuteCallFailed();
         return result;
     }
 }

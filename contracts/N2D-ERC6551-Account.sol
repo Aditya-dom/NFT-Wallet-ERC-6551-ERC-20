@@ -7,12 +7,22 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
-// import "https://github.com/net2devcrypto/ERC-6551-NFT-Wallets-Web3-Front-End-NextJS/blob/main/imports/IERC6551.sol";
-// import "https://github.com/net2devcrypto/ERC-6551-NFT-Wallets-Web3-Front-End-NextJS/blob/main/imports/ERC6551Bytecode.sol";
 import "../imports/IERC6551.sol";
 import "../imports/ERC6551Bytecode.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract ERC6551Account is IERC165, IERC1271, IERC6551Account {
+contract ERC6551Account is
+    IERC165,
+    IERC1271,
+    IERC6551Account,
+    IERC721Receiver,
+    IERC1155Receiver,
+    ReentrancyGuard
+{
     using SafeERC20 for IERC20;
 
     // Add state variables
@@ -28,7 +38,7 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account {
         address to,
         uint256 value,
         bytes calldata data
-    ) external payable returns (bytes memory result) {
+    ) external payable nonReentrant returns (bytes memory result) {
         require(msg.sender == owner(), "Not token owner");
         require(to != address(0), "Invalid target address");
 
@@ -44,7 +54,10 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account {
         }
     }
 
-    function send(address payable to, uint256 amount) external payable {
+    function send(
+        address payable to,
+        uint256 amount
+    ) external payable nonReentrant {
         require(msg.sender == owner(), "Not token owner");
         require(to != address(0), "Invalid target address");
         require(address(this).balance >= amount, "Insufficient funds");
@@ -57,7 +70,7 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account {
         address to,
         uint256 amount,
         IERC20 erc20contract
-    ) external {
+    ) external nonReentrant {
         require(msg.sender == owner(), "Not token owner");
         require(to != address(0), "Invalid target address");
 
@@ -90,6 +103,35 @@ contract ERC6551Account is IERC165, IERC1271, IERC6551Account {
 
     function supportsInterface(bytes4 interfaceId) public view returns (bool) {
         return _supportedInterfaces[interfaceId];
+    }
+
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external pure override returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
+    }
+
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata data
+    ) external view override returns (bytes4) {
+        return IERC1155Receiver.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address operator,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    ) external view override returns (bytes4) {
+        return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
     function isValidSignature(

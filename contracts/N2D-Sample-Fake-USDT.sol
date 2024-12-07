@@ -10,10 +10,8 @@ contract USDT is ERC20, ERC20Burnable, Ownable {
 
   using SafeERC20 for ERC20;
 
-  constructor(address initialOwner) Ownable(initialOwner) ERC20("Tether USD", "USDT") {
-    initialOwner = address(msg.sender);
-  }
-  
+  constructor() Ownable(msg.sender) ERC20("Tether USD", "USDT") {}
+
   function mint(uint256 amount) external onlyOwner {
     _mint(msg.sender, amount);
   }

@@ -33,7 +33,7 @@ const mumbaiCustomRpc = {
 
 const config = getDefaultConfig({
   appName: "WEB3-WALLET-PROVIDERS",
-  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID, // SET THIS UP IN .env
+  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID,
   chains: [
     sepolia, // Ethereum testnet
     goerli, // Ethereum testnet

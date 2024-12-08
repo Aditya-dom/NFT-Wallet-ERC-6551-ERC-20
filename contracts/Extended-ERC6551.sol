@@ -4,7 +4,7 @@ pragma solidity ^0.8.27;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "@uniswap/contracts/interfaces/IUniswapV2Router02.sol";
 
 contract ExtendedERC6551Account is ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -22,7 +22,7 @@ contract ExtendedERC6551Account is ReentrancyGuard {
     ) external payable nonReentrant {
         require(msg.value > 0, "ETH required");
 
-        address;
+        address[] memory path = new address[](2);
         path[0] = uniswapRouter.WETH();
         path[1] = token;
 
@@ -42,9 +42,9 @@ contract ExtendedERC6551Account is ReentrancyGuard {
         uint256 tokenAmount,
         uint256 minEthOut
     ) external nonReentrant {
-        IERC20(token).safeApprove(address(uniswapRouter), tokenAmount);
+        IERC20(token).approve(address(uniswapRouter), tokenAmount);
 
-        address;
+        address[] memory path = new address[](2);
         path[0] = token;
         path[1] = uniswapRouter.WETH();
 
@@ -66,9 +66,9 @@ contract ExtendedERC6551Account is ReentrancyGuard {
         uint256 fromAmount,
         uint256 minToTokensOut
     ) external nonReentrant {
-        IERC20(fromToken).safeApprove(address(uniswapRouter), fromAmount);
+        IERC20(fromToken).approve(address(uniswapRouter), fromAmount);
 
-        address;
+        address[] memory path = new address[](2);
         path[0] = fromToken;
         path[1] = toToken;
 

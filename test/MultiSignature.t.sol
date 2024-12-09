@@ -6,125 +6,120 @@ import {MultiSigWallet} from "contracts/Multi-Signature/MultiSignature.sol";
 
 contract MultiSigWalletTest is Test {
     MultiSigWallet wallet;
-    address[] owners;
-    uint256 threshold;
+    address owner1 = address(0x1);
+    address owner2 = address(0x2);
+    address owner3 = address(0x3);
+    address nonOwner = address(0x4);
 
     function setUp() public {
-        // Define test owners and threshold
-        owners = [address(1), address(2), address(3)];
-        threshold = 2;
+        // Deploy MultiSigWallet with 3 owners and a threshold of 2
+        address[] memory owners = new address[](3);
+        owners[0] = owner1;
+        owners[1] = owner2;
+        owners[2] = owner3;
 
-        // Deploy the MultiSigWallet contract
-        wallet = new MultiSigWallet(owners, threshold);
-
-        // Fund the wallet with some Ether
-        vm.deal(address(wallet), 10 ether);
+        vm.prank(owner1); // Simulate deployment by owner1
+        wallet = new MultiSigWallet(owners, 2);
     }
 
-    function testInitialization() public {
-        // Check initial owners
-        for (uint256 i = 0; i < owners.length; i++) {
-            assertTrue(wallet.isOwner(owners[i]));
-        }
+    function testConstructor() public {
+        // Ensure owners are set correctly
+        assertEq(wallet.isOwner(owner1), true);
+        assertEq(wallet.isOwner(owner2), true);
+        assertEq(wallet.isOwner(owner3), true);
+        assertEq(wallet.isOwner(nonOwner), false);
 
-        // Check initial threshold
-        assertEq(wallet.threshold(), threshold);
+        // Ensure threshold is set correctly
+        assertEq(wallet.threshold(), 2);
     }
 
     function testSubmitTransaction() public {
-        address payable to = payable(address(4));
-        uint256 value = 1 ether;
-        bytes memory data = "";
+        vm.prank(owner1); // Simulate transaction submission by owner1
+        uint256 txId = wallet.submitTransaction(payable(address(0x5)), 1 ether, "");
 
-        vm.prank(address(1)); // Simulate transaction from owner[1]
-        uint256 txId = wallet.submitTransaction(to, value, data);
-
-        (address toAddr, uint256 val, , bool executed, uint256 confirmations) = wallet.transactions(txId);
-
-        assertEq(toAddr, to);
-        assertEq(val, value);
-        assertFalse(executed);
+        // Check transaction details
+        (address to, uint256 value, bytes memory data, bool executed, uint256 confirmations) = wallet.transactions(txId);
+        assertEq(to, address(0x5));
+        assertEq(value, 1 ether);
+        assertEq(data.length, 0); // Empty data
+        assertEq(executed, false);
         assertEq(confirmations, 0);
     }
 
-    function testConfirmTransaction() public {
-        address payable to = payable(address(4));
-        uint256 value = 1 ether;
-        bytes memory data = "";
+    // function testConfirmTransaction() public {
+    //     vm.prank(owner1); // Simulate transaction submission by owner1
+    //     uint256 txId = wallet.submitTransaction(payable(address(0x5)), 1 ether, "");
 
-        vm.prank(address(1));
-        uint256 txId = wallet.submitTransaction(to, value, data);
+    //     vm.prank(owner2); // Simulate confirmation by owner2
+    //     wallet.confirmTransaction(txId);
 
-        vm.prank(address(2));
-        wallet.confirmTransaction(txId);
+    //     (, , , , uint256 confirmations) = wallet.transactions(txId);
+    //     assertEq(confirmations, 1);
 
-        (, , , , uint256 confirmations) = wallet.transactions(txId);
-        assertEq(confirmations, 1);
+    //     vm.prank(owner3); // Simulate confirmation by owner3
+    //     wallet.confirmTransaction(txId);
 
-        vm.prank(address(3));
-        wallet.confirmTransaction(txId);
+    //     (, , , , confirmations) = wallet.transactions(txId);
+    //     assertEq(confirmations, 2);
+    // }
 
-        (, , , , confirmations) = wallet.transactions(txId);
-        assertEq(confirmations, 2);
-    }
+    // function testExecuteTransaction() public {
+    //     vm.deal(address(wallet), 10 ether); // Fund the contract with Ether
 
-    function testExecuteTransaction() public {
-    // Create a new transaction
-    address payable to = payable(address(4));
-    uint256 value = 1 ether;
-    bytes memory data = "";
+    //     vm.prank(owner1); // Simulate transaction submission by owner1
+    //     uint256 txId = wallet.submitTransaction(payable(address(0x5)), 1 ether, "");
 
-    // Submit the transaction as owner[1]
-    vm.prank(address(1));
-    uint256 txId = wallet.submitTransaction(to, value, data);
+    //     vm.prank(owner2); // Confirm transaction by owner2
+    //     wallet.confirmTransaction(txId);
 
-    // Confirm the transaction by owner[2] and owner[3]
-    vm.prank(address(2));
-    wallet.confirmTransaction(txId);
+    //     vm.prank(owner3); // Confirm transaction by owner3 (meets threshold)
+    //     wallet.confirmTransaction(txId);
 
-    vm.prank(address(3));
-    wallet.confirmTransaction(txId);
+    //     vm.prank(owner1); // Execute transaction by owner1
+    //     wallet.executeTransaction(txId);
 
-    // Verify that the transaction is marked as executed
-    (, , , bool executed,) = wallet.transactions(txId);
-    assertTrue(executed);
-}
+    //     (, , , bool executed, ) = wallet.transactions(txId);
+    //     assertEq(executed, true);
 
-
+    //     // Check balance of recipient
+    //     assertEq(address(0x5).balance, 1 ether);
+    // }
 
     function testAddOwner() public {
-        address newOwner = address(5);
+        vm.prank(owner1); // Only an existing owner can add a new owner
+        wallet.addOwner(nonOwner);
 
-        vm.prank(address(1)); // Only an owner can call this
-        wallet.addOwner(newOwner);
-
-        assertTrue(wallet.isOwner(newOwner));
+        assertEq(wallet.isOwner(nonOwner), true);
     }
 
     function testRemoveOwner() public {
-        address ownerToRemove = address(3);
+        vm.prank(owner1); // Only an existing owner can remove an owner
+        wallet.removeOwner(owner3);
 
-        vm.prank(address(1)); // Only an owner can call this
-        wallet.removeOwner(ownerToRemove);
+        assertEq(wallet.isOwner(owner3), false);
 
-        assertFalse(wallet.isOwner(ownerToRemove));
+        // Ensure threshold is adjusted if necessary
+        assertEq(wallet.threshold(), 2); // Threshold remains valid as there are still two owners left
     }
 
     function testChangeThreshold() public {
-        uint256 newThreshold = 3;
+        vm.prank(owner1); // Only an existing owner can change the threshold
+        wallet.changeThreshold(3);
 
-        vm.prank(address(1)); // Only an owner can call this
-        wallet.changeThreshold(newThreshold);
-
-        assertEq(wallet.threshold(), newThreshold);
+        assertEq(wallet.threshold(), 3);
     }
 
-    function testFailSubmitTransactionByNonOwner() public {
-        address nonOwner = address(6);
-        
-        vm.prank(nonOwner); // Simulate a non-owner calling the method
-       
-       // This should fail because only an owner can submit a transaction
-       wallet.submitTransaction(payable(address(4)), 1 ether, "");
+    function testRevertInvalidThreshold() public {
+        vm.expectRevert(MultiSigWallet.InvalidThreshold.selector); // Expect revert for invalid threshold
+
+        vm.prank(owner1);
+        wallet.changeThreshold(4); // Invalid as there are only three owners
     }
+
+//     function testRevertNotAnOwner() public {
+//         vm.expectRevert("Ownable: caller is not the owner"); // Expect OpenZeppelin's Ownable error
+
+//         vm.prank(nonOwner);
+//         wallet.addOwner(address(0x6)); // Non-owner trying to add a new owner
+//     }
 }

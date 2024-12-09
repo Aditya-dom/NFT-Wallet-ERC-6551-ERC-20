@@ -1,23 +1,28 @@
-//SPDX-LICENSE-IDENTIFIER: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.7.0 <0.9.0;
 
 import {QMath} from "contracts/Common/QMath.sol";
+import {Ownable} from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 /**
  * @author Meet Jain - @meetjn
- * @title MultiSignature - A multi signature wallet with support for confirmations using signed messages based on EIP-712.
+ * @title MultiSignature - A multi-signature wallet with support for confirmations using signed messages.
  * @dev A simplified multi-signature wallet contract that allows multiple owners to approve transactions.
- *      Transactions require a minimum number of approvals (threshold) to be executed.
- * 
- *      Most important concepts:
- *      - Threshold: Number of required confirmations for a Q-NFT-Wallet transaction.
- *      - Owners: List of addresses that control the Q-NFT-Wallet. They are the only ones that can add/remove owners, change the threshold and
- *        approve transactions. Managed in `OwnerManager`.
- *      - Signature: A valid signature of an owner of the Q-NFT-Wallet for a transaction hash.
  */
 
-contract MultiSigWallet {
+contract MultiSigWallet is Ownable {
     using QMath for uint256;
+
+    // Custom errors
+    error NotAnOwner();
+    error TransactionDoesNotExist();
+    error TransactionAlreadyExecuted();
+    error TransactionAlreadyConfirmed();
+    error InvalidOwnerAddress();
+    error OwnerNotUnique();
+    error InvalidThreshold();
+    error NotEnoughConfirmations();
+    error TransactionFailed();
 
     // Events
     event Deposit(address indexed sender, uint256 amount);
@@ -29,7 +34,6 @@ contract MultiSigWallet {
     event ThresholdChanged(uint256 newThreshold);
 
     // State variables
-
     address[] public owners; // List of wallet owners
     mapping(address => bool) public isOwner; // Mapping to check if an address is an owner
     uint256 public threshold; // Minimum number of approvals required for a transaction
@@ -46,59 +50,26 @@ contract MultiSigWallet {
     mapping(uint256 => mapping(address => bool)) public confirmations; // Tracks which owners confirmed each transaction
 
     /**
-     * @dev Modifier to restrict access to only wallet owners.
-     */
-    modifier onlyOwner() {
-        require(isOwner[msg.sender], "Not an owner");
-        _;
-    }
-
-    /**
-     * @dev Modifier to check if a transaction exists.
-     * @param transactionId The ID of the transaction.
-     */
-    modifier transactionExists(uint256 transactionId) {
-        require(transactionId < transactions.length, "Transaction does not exist");
-        _;
-    }
-
-    /**
-     * @dev Modifier to check if a transaction has not been executed yet.
-     * @param transactionId The ID of the transaction.
-     */
-    modifier notExecuted(uint256 transactionId) {
-        require(!transactions[transactionId].executed, "Transaction already executed");
-        _;
-    }
-
-    /**
-     * @dev Modifier to check if a transaction has not been confirmed by the sender yet.
-     * @param transactionId The ID of the transaction.
-     */
-    modifier notConfirmed(uint256 transactionId) {
-        require(!confirmations[transactionId][msg.sender], "Transaction already confirmed by this owner");
-        _;
-    }
-
-    /**
      * @notice Initializes the contract with a list of owners and a confirmation threshold.
      * @param _owners The list of initial owners.
      * @param _threshold The number of confirmations required for a transaction.
      */
-    constructor(address[] memory _owners, uint256 _threshold) {
-        require(_owners.length > 0, "Owners required");
-        require(_threshold > 0 && _threshold <= _owners.length, "Invalid threshold");
+    
+    constructor(address[] memory _owners, uint256 _threshold) Ownable(msg.sender) {
+    if (_owners.length == 0) revert InvalidThreshold();
+    if (_threshold == 0 || _threshold > _owners.length) revert InvalidThreshold();
 
-        for (uint256 i = 0; i < _owners.length; i++) {
-            address owner = _owners[i];
-            require(owner != address(0), "Invalid owner");
-            require(!isOwner[owner], "Owner not unique");
+    for (uint256 i = 0; i < _owners.length; i++) {
+        address owner = _owners[i];
+        if (owner == address(0)) revert InvalidOwnerAddress();
+        if (isOwner[owner]) revert OwnerNotUnique();
 
-            isOwner[owner] = true;
-            owners.push(owner);
-        }
-        threshold = _threshold;
+        isOwner[owner] = true;
+        owners.push(owner);
     }
+
+    threshold = _threshold;
+}
 
     /**
      * @notice Allows the contract to receive Ether.
@@ -114,18 +85,20 @@ contract MultiSigWallet {
      * @param data The data payload (e.g., function call).
      * @return transactionId The ID of the newly created transaction.
      */
-    function submitTransaction(address payable to, uint256 value, bytes memory data)
-        public
-        onlyOwner
-        returns (uint256 transactionId)
-    {
-        transactions.push(Transaction({
-            to: to,
-            value: value,
-            data: data,
-            executed: false,
-            confirmations: 0
-        }));
+    function submitTransaction(
+        address payable to,
+        uint256 value,
+        bytes memory data
+    ) public onlyOwner returns (uint256 transactionId) {
+        transactions.push(
+            Transaction({
+                to: to,
+                value: value,
+                data: data,
+                executed: false,
+                confirmations: 0
+            })
+        );
         transactionId = transactions.length - 1;
         emit TransactionSubmitted(transactionId);
     }
@@ -134,13 +107,11 @@ contract MultiSigWallet {
      * @notice Confirms a submitted transaction.
      * @param transactionId The ID of the transaction to confirm.
      */
-    function confirmTransaction(uint256 transactionId)
-        public
-        onlyOwner
-        transactionExists(transactionId)
-        notExecuted(transactionId)
-        notConfirmed(transactionId)
-    {
+    function confirmTransaction(uint256 transactionId) public onlyOwner {
+        if (transactionId >= transactions.length) revert TransactionDoesNotExist();
+        if (transactions[transactionId].executed) revert TransactionAlreadyExecuted();
+        if (confirmations[transactionId][msg.sender]) revert TransactionAlreadyConfirmed();
+
         confirmations[transactionId][msg.sender] = true;
         transactions[transactionId].confirmations += 1;
         emit TransactionConfirmed(msg.sender, transactionId);
@@ -154,22 +125,20 @@ contract MultiSigWallet {
      * @notice Executes a confirmed transaction if it meets the required threshold.
      * @param transactionId The ID of the transaction to execute.
      */
-    function executeTransaction(uint256 transactionId)
-        public
-        onlyOwner
-        transactionExists(transactionId)
-        notExecuted(transactionId)
-    {
+    function executeTransaction(uint256 transactionId) public onlyOwner {
+        if (transactionId >= transactions.length) revert TransactionDoesNotExist();
+        if (transactions[transactionId].executed) revert TransactionAlreadyExecuted();
+
         Transaction storage txn = transactions[transactionId];
         
-        require(txn.confirmations >= threshold, "Not enough confirmations");
+        if (txn.confirmations < threshold) revert NotEnoughConfirmations();
 
         txn.executed = true;
-        
-        (bool success,) = txn.to.call{value: txn.value}(txn.data);
-        
-        require(success, "Transaction failed");
-        
+
+        (bool success, ) = txn.to.call{value: txn.value}(txn.data);
+
+        if (!success) revert TransactionFailed();
+
         emit TransactionExecuted(transactionId);
     }
 
@@ -178,8 +147,8 @@ contract MultiSigWallet {
      * @param newOwner The address of the new owner.
      */
     function addOwner(address newOwner) public onlyOwner {
-        require(newOwner != address(0), "Invalid owner address");
-        require(!isOwner[newOwner], "Already an owner");
+        if (newOwner == address(0)) revert InvalidOwnerAddress();
+        if (isOwner[newOwner]) revert OwnerNotUnique();
 
         isOwner[newOwner] = true;
         owners.push(newOwner);
@@ -192,7 +161,7 @@ contract MultiSigWallet {
      * @param ownerToRemove The address of the owner to remove.
      */
     function removeOwner(address ownerToRemove) public onlyOwner {
-        require(isOwner[ownerToRemove], "Not an owner");
+        if (!isOwner[ownerToRemove]) revert NotAnOwner();
 
         isOwner[ownerToRemove] = false;
 
@@ -203,7 +172,7 @@ contract MultiSigWallet {
                 break;
             }
         }
-        
+
         if (threshold > owners.length) {
             changeThreshold(owners.length); // Adjust threshold if necessary
         }
@@ -216,8 +185,8 @@ contract MultiSigWallet {
      * @param newThreshold The new confirmation threshold.
      */
     function changeThreshold(uint256 newThreshold) public onlyOwner {
-        require(newThreshold > 0 && newThreshold <= owners.length, "Invalid threshold");
-        
+        if (newThreshold == 0 || newThreshold > owners.length) revert InvalidThreshold();
+
         threshold = newThreshold;
 
         emit ThresholdChanged(newThreshold);
